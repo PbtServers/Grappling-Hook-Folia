@@ -3,6 +3,7 @@ author: SnowGears
 description: A simple grappling hook plugin.
 version: 1.6.5
 api-version: 1.14
+folia-supported: true
 main: com.snowgears.grapplinghook.GrapplingHook
 permissions:
     grapplinghook.pull.self:

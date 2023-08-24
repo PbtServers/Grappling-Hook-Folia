@@ -88,8 +88,11 @@ public class GrapplingListener implements Listener{
 								final ItemStack curItemInHand = player.getInventory().getItemInMainHand().clone();
 								player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
 								//run task 2 ticks later
-								Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-									player.getInventory().setItemInMainHand(curItemInHand);
+								Bukkit.getRegionScheduler().runDelayed(plugin, player.getLocation(), new Consumer<ScheduledTask>() {
+									@Override
+									public void accept(ScheduledTask scheduledTask) {
+										player.getInventory().setItemInMainHand(curItemInHand);
+									}
 								}, 2);
 							} else {
 								//hooked.sendMessage(ChatColor.YELLOW+"You have been hooked by "+ ChatColor.RESET+player.getName()+ChatColor.YELLOW+"!");
@@ -103,8 +106,11 @@ public class GrapplingListener implements Listener{
 						final ItemStack curItemInHand = player.getInventory().getItemInMainHand().clone();
 						player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
 						//run task 2 ticks later
-						Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-							player.getInventory().setItemInMainHand(curItemInHand);
+						Bukkit.getRegionScheduler().runDelayed(plugin, player.getLocation(), new Consumer<ScheduledTask>() {
+							@Override
+							public void accept(ScheduledTask scheduledTask) {
+								player.getInventory().setItemInMainHand(curItemInHand);
+							}
 						}, 2);
 
 						return;
@@ -190,8 +196,11 @@ public class GrapplingListener implements Listener{
 			player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
 
 			//run task 2 ticks later
-			Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-				player.getInventory().setItemInMainHand(curItemInHand);
+			Bukkit.getRegionScheduler().runDelayed(plugin, player.getLocation(), new Consumer<ScheduledTask>() {
+				@Override
+				public void accept(ScheduledTask scheduledTask) {
+					player.getInventory().setItemInMainHand(curItemInHand);
+				}
 			}, 2);
 		}
     }

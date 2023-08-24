@@ -32,8 +32,8 @@ public class GrapplingListener implements Listener{
 
 	private HashMap<String, HookSettings> hookSettings = new HashMap<>();
 
-	private HashMap<Integer, Integer> noFallEntities = new HashMap<>(); //entity id, delayed task id
-	private HashMap<UUID, Integer> noGrapplePlayers = new HashMap<>(); //uuid, delayed task id
+	private HashMap<Integer, ScheduledTask> noFallEntities = new HashMap<>(); //entity id, delayed task id
+	private HashMap<UUID, ScheduledTask> noGrapplePlayers = new HashMap<>(); //uuid, delayed task id
 	private HashMap<UUID, FishHook> activeHookEntities = new HashMap<>(); //player uuid, ref to hook entity
 	private HashMap<UUID, Location> hookLastLocation = new HashMap<>(); //player uuid, location of hook entity
 	private HashSet<UUID> playersConsumedSlowfall = new HashSet<>();
@@ -516,16 +516,19 @@ public class GrapplingListener implements Listener{
 	
 	public void addNoFall(final Entity e, int ticks) {
 		if(noFallEntities.containsKey(e.getEntityId()))
-			Bukkit.getServer().getScheduler().cancelTask(noFallEntities.get(e.getEntityId()));
+			noFallEntities.get(e.getEntityId()).cancel();
+
+		Consumer<ScheduledTask> task3 = new Consumer<ScheduledTask>() {
+			@Override
+			public void accept(ScheduledTask scheduledTask) {
+				if(noFallEntities.containsKey(e.getEntityId())) {
+					noFallEntities.remove(e.getEntityId());
+				}
+			}
+		};
 		
-		int taskId = plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin,new Runnable() {
-			 @Override
-			public void run(){
-				  if(noFallEntities.containsKey(e.getEntityId()))
-					 noFallEntities.remove(e.getEntityId());
-			  }
-	  	}, ticks);
-		
+		ScheduledTask taskId = Bukkit.getRegionScheduler().runDelayed(plugin, e.getLocation(), task3, ticks);
+
 		noFallEntities.put(e.getEntityId(), taskId);
 	}
 
@@ -540,13 +543,16 @@ public class GrapplingListener implements Listener{
 
 	public void addPlayerCoolDown(final Player player, int seconds) {
 		if(noGrapplePlayers.containsKey(player.getUniqueId()))
-			plugin.getServer().getScheduler().cancelTask(noGrapplePlayers.get(player.getUniqueId()));
+			noGrapplePlayers.get(player.getUniqueId()).cancel();
 
-		int taskId = plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin,new Runnable() {
-			public void run(){
+		Consumer<ScheduledTask> task4 = new Consumer<ScheduledTask>() {
+			@Override
+			public void accept(ScheduledTask scheduledTask) {
 				removePlayerCoolDown(player);
 			}
-		}, (seconds*20));
+		};
+
+		ScheduledTask taskId = Bukkit.getRegionScheduler().runDelayed(plugin, player.getLocation(), task4, seconds*20L);
 
 		noGrapplePlayers.put(player.getUniqueId(), taskId);
 	}

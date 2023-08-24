@@ -2,6 +2,7 @@ package com.snowgears.grapplinghook;
 
 import com.snowgears.grapplinghook.api.HookAPI;
 import com.snowgears.grapplinghook.utils.HookSettings;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -19,7 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
+import java.util.function.Consumer;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -244,7 +245,6 @@ public class GrapplingListener implements Listener{
 			}
 		}
 	}
-
 	@EventHandler
 	public void hookStuck(ProjectileHitEvent event) {
 		if (event.getEntity() instanceof FishHook && event.getEntity().getShooter() instanceof Player) {
@@ -254,6 +254,7 @@ public class GrapplingListener implements Listener{
 
 				if(!HookAPI.getHookInHandHasStickyHook(player))
 					return;
+
 
 				if (event.getHitBlock() != null && !event.getHitBlock().getLocation().getBlock().isEmpty()) {
 					Location hitblock = event.getHitBlock().getLocation().add(0.5, 0, 0.5);
@@ -269,7 +270,6 @@ public class GrapplingListener implements Listener{
 						armorStand.setMarker(true);
 						armorStand.setBasePlate(false);
 						fishHook.setGravity(false);
-						fishHook.setBounce(true);
 						fishHook.setMetadata("stuckBlock", new FixedMetadataValue(plugin, ""));
 					}
 				}
@@ -283,7 +283,7 @@ public class GrapplingListener implements Listener{
     	//System.out.println(event.getState().name());
         Player player = event.getPlayer();
 
-        if(HookAPI.isGrapplingHook(player.getInventory().getItemInMainHand()) == false)
+        if(!HookAPI.isGrapplingHook(player.getInventory().getItemInMainHand()))
         	return;
 
 		if(event.getState() == org.bukkit.event.player.PlayerFishEvent.State.IN_GROUND  || event.getState() == org.bukkit.event.player.PlayerFishEvent.State.FAILED_ATTEMPT || event.getHook().hasMetadata("stuckBlock")) {
@@ -357,9 +357,9 @@ public class GrapplingListener implements Listener{
 
 			event.getHook().setVelocity(event.getHook().getVelocity().multiply(HookAPI.getHookInHandVelocityThrow(player)));
 
-			BukkitRunnable task = new BukkitRunnable() {
+			Consumer<ScheduledTask> task = new Consumer<ScheduledTask>() {
 				@Override
-				public void run() {
+				public void accept(ScheduledTask scheduledTask) {
 					if(activeHookEntities.containsKey(player.getUniqueId())) {
 						FishHook hook = activeHookEntities.get(player.getUniqueId());
 						if (hook == null || hook.isDead()) {
@@ -374,23 +374,23 @@ public class GrapplingListener implements Listener{
 								}
 							}
 							activeHookEntities.remove(player.getUniqueId());
-							this.cancel();
+							//this.cancel();
 						}
 						else{
 							hookLastLocation.put(player.getUniqueId(), hook.getLocation());
 						}
 					}
-
 				}
 			};
-			task.runTaskTimer(plugin, 1, 1);
+			Bukkit.getRegionScheduler().runDelayed(plugin, player.getLocation(), task, 1);
+
 		}
 		else if(event.getState() == PlayerFishEvent.State.REEL_IN){
 
 			Block block = event.getHook().getLocation().clone().add(0, -0.1, 0).getBlock();
 
 			if (HookAPI.canHookMaterial(player, block.getType())) {
-				if(plugin.usePerms() == false || player.hasPermission("grapplinghook.pull.self")){
+				if(!plugin.usePerms() || player.hasPermission("grapplinghook.pull.self")){
 					PlayerGrappleEvent e = new PlayerGrappleEvent(player, player, event.getHook().getLocation());
 					plugin.getServer().getPluginManager().callEvent(e);
 				}
